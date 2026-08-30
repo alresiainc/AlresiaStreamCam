@@ -6,106 +6,119 @@
   <title>StreamCam Setup</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0d0d0d; color: #e0e0e0;
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    }
-    .card {
-      background: #1a1a1a; border: 1px solid #333; border-radius: 12px;
-      padding: 40px; max-width: 520px; width: 90%;
-    }
-    .header { text-align: center; margin-bottom: 28px; }
-    .header h1 { font-size: 22px; margin-bottom: 6px; color: #fff; }
-    .header p { color: #666; font-size: 13px; }
 
-    .platform-badge {
-      display: inline-block; background: #222; border: 1px solid #444;
-      padding: 5px 14px; border-radius: 20px; font-size: 13px; color: #aaa;
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      background: #09090b; color: #fafafa;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .card {
+      background: #111113; border: 1px solid #222225; border-radius: 16px;
+      padding: 48px 40px 40px; max-width: 440px; width: 92%; text-align: center;
+    }
+
+    .icon {
+      width: 56px; height: 56px; margin: 0 auto 20px;
+      background: #1a1a1d; border-radius: 14px; border: 1px solid #222225;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .icon svg { width: 28px; height: 28px; }
+
+    h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.02em; }
+    .subtitle { font-size: 13px; color: #71717a; margin-bottom: 28px; line-height: 1.5; }
+
+    .platform-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #18181b; border: 1px solid #27272a; border-radius: 20px;
+      padding: 6px 14px; font-size: 12px; color: #a1a1aa; font-weight: 500;
       margin-bottom: 24px;
     }
-
-    .installer-box {
-      background: #111; border: 1px solid #2a2a2a; border-radius: 10px;
-      padding: 24px; text-align: center; margin-bottom: 20px;
-    }
-    .installer-box h3 { font-size: 15px; color: #f5a623; margin-bottom: 8px; }
-    .installer-box p { font-size: 13px; color: #777; margin-bottom: 16px; }
+    .platform-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
 
     .download-btn {
-      display: inline-block; padding: 13px 36px;
-      background: #f5a623; color: #000; border: none; border-radius: 8px;
-      font-size: 15px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;
-      text-decoration: none;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 14px 24px;
+      background: #E8491D; color: #fff; border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.15s; letter-spacing: -0.01em;
     }
-    .download-btn:hover { opacity: 0.85; }
+    .download-btn:hover { opacity: 0.9; }
+    .download-btn:disabled { opacity: 0.4; cursor: default; }
+    .download-btn svg { width: 18px; height: 18px; }
 
     .divider {
       display: flex; align-items: center; gap: 12px;
-      margin: 20px 0; color: #444; font-size: 12px;
+      margin: 24px 0 20px; color: #3f3f46; font-size: 11px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.05em;
     }
     .divider::before, .divider::after {
-      content: ''; flex: 1; height: 1px; background: #222;
+      content: ''; flex: 1; height: 1px; background: #222225;
     }
 
-    .fallback-section h4 {
-      font-size: 12px; color: #555; margin-bottom: 8px; font-weight: 500;
+    .alt-note {
+      font-size: 12px; color: #52525b; line-height: 1.6;
+      margin-bottom: 20px;
     }
-    .cmd-block {
-      background: #111; border: 1px solid #2a2a2a; border-radius: 8px;
-      padding: 12px; font-family: 'SF Mono', monospace;
-      font-size: 12px; color: #f5a623; cursor: pointer; position: relative;
-      transition: border-color 0.2s; word-break: break-all;
-    }
-    .cmd-block:hover { border-color: #f5a623; }
-    .cmd-block .copy-label {
-      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-      font-size: 10px; color: #555; font-family: -apple-system, sans-serif;
-    }
-    .cmd-block.copied .copy-label { color: #4caf50; }
 
     .check-btn {
-      display: none; margin-top: 14px; padding: 10px 24px;
-      background: transparent; color: #f5a623; border: 1px solid #f5a623;
-      border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
-      width: 100%;
+      width: 100%; padding: 12px;
+      background: transparent; color: #a1a1aa;
+      border: 1px solid #27272a; border-radius: 10px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s;
     }
-    .check-btn:hover { background: rgba(245,166,35,0.06); }
-    .status-msg { margin-top: 14px; font-size: 13px; text-align: center; min-height: 20px; }
-    .status-msg.ok { color: #4caf50; }
-    .status-msg.err { color: #f44336; }
-    .note { color: #444; font-size: 11px; margin-top: 16px; text-align: center; }
-    .note code { background: #1a1a1a; padding: 1px 5px; border-radius: 3px; color: #666; }
+    .check-btn:hover { border-color: #3f3f46; color: #fafafa; }
+    .check-btn:disabled { opacity: 0.4; cursor: default; }
+
+    .status { margin-top: 16px; font-size: 13px; min-height: 20px; }
+    .status.ok { color: #22c55e; }
+    .status.err { color: #ef4444; }
+
+    .ext-id {
+      margin-top: 20px; font-size: 11px; color: #27272a;
+      font-family: 'SF Mono', monospace;
+    }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="header">
-      <h1>🎥 StreamCam Setup</h1>
-      <p>One-time setup for virtual camera & streaming host</p>
+    <div class="icon">
+      <svg viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="6" stroke="#E8491D" stroke-width="2" fill="none"/>
+        <circle cx="14" cy="14" r="2.5" fill="#E8491D"/>
+      </svg>
     </div>
 
-    <div style="text-align:center">
-      <div class="platform-badge" id="platformBadge">Detecting…</div>
+    <h1>Setup Required</h1>
+    <p class="subtitle">Install the native host to use virtual camera<br>and streaming features.</p>
+
+    <div class="platform-tag">
+      <span class="dot"></span>
+      <span id="platformBadge">Detecting…</span>
     </div>
 
-    <!-- Download Installer -->
-    <div class="installer-box">
-      <h3 id="installerTitle">Download Installer</h3>
-      <p id="installerDesc">Handles everything automatically</p>
-      <a class="download-btn" id="downloadBtn" href="#">Download</a>
-    </div>
+    <button class="download-btn" id="downloadBtn">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 3v10M6 9l4 4 4-4M3 15v2a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2"/>
+      </svg>
+      <span id="downloadLabel">Download Installer</span>
+    </button>
 
-    <div class="divider">or install from source</div>
+    <div class="divider">then</div>
 
-    <div class="fallback-section">
-      <h4>Run this in a terminal</h4>
-      <div class="cmd-block" id="cmdBlock" title="Click to copy"></div>
-    </div>
+    <p class="alt-note">
+      Run the downloaded file and follow the prompts.<br>
+      It installs everything automatically.
+    </p>
 
-    <button class="check-btn" id="checkBtn">Check Connection</button>
-    <div class="status-msg" id="statusMsg"></div>
-    <p class="note" id="noteText"></p>
+    <button class="check-btn" id="checkBtn" style="display:none">
+      I installed it — check connection
+    </button>
+
+    <div class="status" id="statusMsg"></div>
+    <div class="ext-id" id="noteText"></div>
   </div>
 
   <script src="setup.js"></script>
