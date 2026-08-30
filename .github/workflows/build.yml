@@ -13,25 +13,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Build .pkg installer
+        run: bash native-host/installer/build.sh
 
-      - name: Install dependencies
-        working-directory: native-host/installer
-        run: npm install
-
-      - name: Build DMG
-        working-directory: native-host/installer
-        run: npx electron-builder --mac dmg --x64
-
-      - name: Upload DMG
+      - name: Upload .pkg
         uses: actions/upload-artifact@v4
         with:
           name: installer-macos
-          path: native-host/installer/dist/*.dmg
-          if-no-files-found: warn
+          path: native-host/installer/dist/*.pkg
+          if-no-files-found: error
 
   build-windows:
     runs-on: windows-latest
@@ -39,20 +29,96 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Build .exe installer (iexpress)
+        shell: pwsh
+        run: |
+          # Create a self-extracting installer using iexpress (built into Windows)
+          # This bundles the native host files into a small .exe
 
-      - name: Install dependencies
-        working-directory: native-host/installer
-        run: npm install
+          $distDir = "native-host\installer\dist"
+          New-Item -ItemType Directory -Force -Path $distDir | Out-Null
 
-      - name: Build EXE
-        working-directory: native-host/installer
-        run: npx electron-builder --win nsis --x64
+          # Create a temporary directory with all host files
+          $staging = "$distDir\staging"
+          New-Item -ItemType Directory -Force -Path $staging | Out-Null
 
-      - name: Upload EXE
+          Copy-Item "native-host\host.js" "$staging\"
+          Copy-Item "native-host\install.js" "$staging\"
+          Copy-Item "native-host\vcam-setup.js" "$staging\"
+          Copy-Item "native-host\package.json" "$staging\"
+          Copy-Item -Recurse "native-host\platform" "$staging\"
+
+          # Create post-install batch file
+          $batch = @"
+          @echo off
+          echo.
+          echo StreamCam Installer
+          echo ===================
+          echo.
+          echo Checking for Node.js...
+          where node >nul 2>&1
+          if %ERRORLEVEL% neq 0 (
+              echo Node.js not found. Please install from https://nodejs.org
+              start https://nodejs.org
+              pause
+              exit /b 1
+          )
+          echo Node.js found.
+          echo.
+          echo Installing dependencies...
+          cd /d "%~dp0"
+          call npm install --production
+          echo.
+          echo Registering native host...
+          node install.js
+          echo.
+          echo Setting up virtual camera...
+          node vcam-setup.js setup
+          echo.
+          echo Done! Restart Chrome to use StreamCam.
+          pause
+          "@
+          Set-Content -Path "$staging\install.bat" -Value $batch
+
+          # Create iexpress SED file for self-extracting installer
+          $sed = @"
+          [Version]
+          Class=IEXPRESS
+          TEDVer=2000
+          [Options]
+          PackagePurpose=Install
+          ShowInstallProgram=1
+          InstallPrompt=%InstallPrompt%
+          DisplayLicense=%DisplayLicense%
+          FinishMessage=%FinishMessage%
+          TargetName=%TargetName%
+          FGUICID=%FGUICID%
+          AppName=%AppName%
+          AppVersion=%AppVersion%
+          OrigName=%OrigName%
+          StagingDir=%StagingDir%
+          CompressionType=MSZIP
+          FOPT=1
+          [ExtractionOptions]
+          ShowProgress=1
+          HideFileProgress=1
+          RunProgram=install.bat
+          "@
+
+          $sedPath = "$distDir\installer.sed"
+          Set-Content -Path $sedPath -Value $sed
+
+          # Build using iexpress
+          & iexpress /N "$sedPath"
+
+          # Move the output
+          Move-Item "$distDir\StreamCam-Installer.exe" "$distDir\StreamCam-Installer-Setup.exe" -Force -ErrorAction SilentlyContinue
+
+          # Cleanup
+          Remove-Item -Recurse -Force "$staging" -ErrorAction SilentlyContinue
+          Remove-Item "$sedPath" -ErrorAction SilentlyContinue
+
+      - name: Upload .exe
         uses: actions/upload-artifact@v4
         with:
           name: installer-windows
@@ -65,30 +131,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Build .deb package
+        run: bash native-host/installer/build.sh
 
-      - name: Install dependencies
-        working-directory: native-host/installer
-        run: npm install
-
-      - name: Build DEB + AppImage
-        working-directory: native-host/installer
-        run: npx electron-builder --linux deb AppImage
-
-      - name: Upload Linux builds
+      - name: Upload .deb
         uses: actions/upload-artifact@v4
         with:
           name: installer-linux
-          path: |
-            native-host/installer/dist/*.deb
-            native-host/installer/dist/*.AppImage
-          if-no-files-found: warn
+          path: native-host/installer/dist/*.deb
+          if-no-files-found: error
 
   publish-release:
-    needs: [build-macos, build-windows, build-linux]
+    needs: [build-macos, build-linux]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
@@ -98,19 +152,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: installer-macos
-          path: artifacts/macos
-
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: installer-windows
-          path: artifacts/windows
+          path: artifacts
 
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
           name: installer-linux
-          path: artifacts/linux
+          path: artifacts
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: installer-windows
+          path: artifacts
+        continue-on-error: true
 
       - name: List artifacts
         run: find artifacts -type f
@@ -118,8 +173,5 @@ jobs:
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            artifacts/macos/*
-            artifacts/windows/*
-            artifacts/linux/*
+          files: artifacts/*
           fail_on_unmatched_files: false
