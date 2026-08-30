@@ -1,14 +1,15 @@
 /**
  * StreamCam Setup Page
  *
- * Two paths:
- * 1. Download the proper native installer (.dmg / .exe / .deb / .AppImage)
- * 2. Copy a one-liner terminal command as fallback
+ * Auto-detects platform, downloads the correct installer from GitHub,
+ * and guides the user through a one-click setup.
  */
 
 'use strict';
 
 const extId = chrome.runtime.id;
+const GITHUB_REPO = 'alresiainc/AlresiaStreamCam';
+const RELEASE_TAG = 'v1.0.0';
 
 // ─── Platform Detection ───────────────────────────────────────────
 
@@ -20,24 +21,45 @@ function detectPlatform() {
   return 'unknown';
 }
 
-function getInstallerName(platform) {
+function getInstallerInfo(platform) {
+  const baseUrl = `https://github.com/${GITHUB_REPO}/releases/download/${RELEASE_TAG}`;
   switch (platform) {
-    case 'macos': return { file: 'StreamCam-Installer.dmg', label: 'macOS (.dmg)', icon: '🍎' };
-    case 'windows': return { file: 'StreamCam-Installer-Setup.exe', label: 'Windows (.exe)', icon: '🪟' };
-    case 'linux': return { file: 'StreamCam-Installer.AppImage', label: 'Linux (.AppImage)', icon: '🐧' };
-    default: return null;
+    case 'macos':
+      return {
+        name: 'StreamCam Installer.dmg',
+        url: `${baseUrl}/StreamCam.Installer-1.0.0.dmg`,
+        icon: '🍎',
+        label: 'macOS',
+        hint: 'Double-click the .dmg, then drag to Applications',
+      };
+    case 'windows':
+      return {
+        name: 'StreamCam Installer Setup.exe',
+        url: `${baseUrl}/StreamCam.Installer.Setup.1.0.0.exe`,
+        icon: '🪟',
+        label: 'Windows',
+        hint: 'Run the .exe and follow the wizard',
+      };
+    case 'linux':
+      return {
+        name: 'StreamCam Installer.AppImage',
+        url: `${baseUrl}/StreamCam.Installer-1.0.0.AppImage`,
+        icon: '🐧',
+        label: 'Linux',
+        hint: 'Make it executable and run, or use the .deb for Debian/Ubuntu',
+      };
+    default:
+      return null;
   }
-}
-
-function getTerminalCommand(platform) {
-  return `cd native-host && npm install && node install.js --id=${extId}`;
 }
 
 // ─── UI ───────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
   const platform = detectPlatform();
-  const installer = getInstallerName(platform);
+  const installer = getInstallerInfo(platform);
+  const statusMsg = document.getElementById('statusMsg');
+  const checkBtn = document.getElementById('checkBtn');
 
   // Platform badge
   const badge = document.getElementById('platformBadge');
@@ -45,68 +67,37 @@ document.addEventListener('DOMContentLoaded', () => {
     badge.textContent = `${installer.icon} ${installer.label}`;
   } else {
     badge.textContent = 'Platform not detected';
+    return;
   }
 
-  // ── Installer Download Button ──────────────────────────────
+  // Installer name + hint
+  const titleEl = document.getElementById('installerTitle');
+  const descEl = document.getElementById('installerDesc');
+  if (titleEl) titleEl.textContent = `Download ${installer.name}`;
+  if (descEl) descEl.textContent = installer.hint;
+
+  // Download button — opens GitHub release page with the correct file
   const downloadBtn = document.getElementById('downloadBtn');
-  const statusMsg = document.getElementById('statusMsg');
-  const checkBtn = document.getElementById('checkBtn');
-
-  // Check if installer exists in the extension
-  const installerUrl = installer
-    ? chrome.runtime.getURL(`native-host/installers/${installer.file}`)
-    : null;
-
-  // For now, show a link to releases or the terminal fallback
-  // The proper installer would be hosted as a release artifact
   downloadBtn.addEventListener('click', () => {
-    if (installerUrl) {
-      // Try to download from extension
-      chrome.downloads.download({
-        url: installerUrl,
-        filename: installer.file,
-        saveAs: false,
-      }).then(() => {
-        statusMsg.textContent = '✓ Downloaded! Check your Downloads folder, then double-click the file.';
-        statusMsg.className = 'status-msg ok';
-        checkBtn.style.display = 'inline-block';
-      }).catch(() => {
-        // Installer not bundled — show release link
-        statusMsg.innerHTML = `Installer not bundled yet. Use the terminal command below, or <a href="https://github.com/nicepkg/streamcam/releases" target="_blank" style="color:#f5a623;">check releases</a> for the latest installer.`;
-        statusMsg.className = 'status-msg err';
-      });
-    }
-  });
-
-  // ── Terminal Command (fallback) ────────────────────────────
-  const cmdBlock = document.getElementById('cmdBlock');
-  const cmd = getTerminalCommand(platform);
-  cmdBlock.textContent = cmd;
-
-  // Add copy label back
-  const copyLabel = document.createElement('span');
-  copyLabel.className = 'copy-label';
-  copyLabel.textContent = 'click to copy';
-  cmdBlock.appendChild(copyLabel);
-
-  cmdBlock.addEventListener('click', () => {
-    navigator.clipboard.writeText(cmd).then(() => {
-      cmdBlock.classList.add('copied');
-      copyLabel.textContent = 'copied!';
-      setTimeout(() => {
-        cmdBlock.classList.remove('copied');
-        copyLabel.textContent = 'click to copy';
-      }, 2000);
+    // Try to download directly via chrome.downloads
+    chrome.downloads.download({
+      url: installer.url,
+      filename: installer.name,
+      saveAs: false,
+    }).then(() => {
+      statusMsg.textContent = `✓ Downloaded! Open your Downloads folder and run the installer.`;
+      statusMsg.className = 'status-msg ok';
+      checkBtn.style.display = 'inline-block';
     }).catch(() => {
-      // Fallback
-      const range = document.createRange();
-      range.selectNodeContents(cmdBlock);
-      window.getSelection().removeAllRanges();
-      window.getSelection().addRange(range);
+      // Fallback: open the release page in a new tab
+      chrome.tabs.create({ url: installer.url });
+      statusMsg.textContent = `Opening download page... If nothing downloads, right-click and "Save As" the file.`;
+      statusMsg.className = 'status-msg ok';
+      checkBtn.style.display = 'inline-block';
     });
   });
 
-  // ── Check Connection ───────────────────────────────────────
+  // Check Connection button
   checkBtn.addEventListener('click', async () => {
     checkBtn.disabled = true;
     checkBtn.textContent = 'Checking…';
@@ -116,10 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const conn = await chrome.runtime.sendMessage({ type: 'native:connect' });
       if (conn && conn.ok) {
-        statusMsg.textContent = '✓ Connected! You can close this tab and restart Chrome.';
+        statusMsg.textContent = '✓ Connected! Restart Chrome and try Virtual Cam again.';
         statusMsg.className = 'status-msg ok';
       } else {
-        statusMsg.textContent = `✗ ${conn?.error || 'Not connected. Run the installer and restart Chrome.'}`;
+        statusMsg.textContent = `✗ ${conn?.error || 'Not connected yet. Run the installer and restart Chrome.'}`;
         statusMsg.className = 'status-msg err';
       }
     } catch (err) {
@@ -131,7 +122,32 @@ document.addEventListener('DOMContentLoaded', () => {
     checkBtn.textContent = 'Check Connection';
   });
 
-  // ── Note ───────────────────────────────────────────────────
+  // Terminal fallback
+  const cmdBlock = document.getElementById('cmdBlock');
+  if (cmdBlock) {
+    const cmd = `cd native-host && npm install && node install.js --id=${extId}`;
+    cmdBlock.textContent = '';
+    const textSpan = document.createElement('span');
+    textSpan.textContent = cmd;
+    cmdBlock.appendChild(textSpan);
+    const copyLabel = document.createElement('span');
+    copyLabel.className = 'copy-label';
+    copyLabel.textContent = 'click to copy';
+    cmdBlock.appendChild(copyLabel);
+
+    cmdBlock.addEventListener('click', () => {
+      navigator.clipboard.writeText(cmd).then(() => {
+        cmdBlock.classList.add('copied');
+        copyLabel.textContent = 'copied!';
+        setTimeout(() => {
+          cmdBlock.classList.remove('copied');
+          copyLabel.textContent = 'click to copy';
+        }, 2000);
+      });
+    });
+  }
+
+  // Extension ID note
   const noteEl = document.getElementById('noteText');
-  noteEl.innerHTML = `Extension ID: <code>${extId}</code>`;
+  if (noteEl) noteEl.innerHTML = `Extension ID: <code>${extId}</code>`;
 });

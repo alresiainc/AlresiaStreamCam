@@ -919,20 +919,17 @@
         <p class="settings-note">This installs v4l2loopback (a kernel module) and labels the device "StreamCam Virtual Camera". It needs sudo.</p>
       `;
     } else if (isMacWin) {
-      // macOS/Windows: our own compiled native plugin
+      // macOS/Windows: download the installer from GitHub
+      const installerUrl = platform === 'macos'
+        ? 'https://github.com/alresiainc/AlresiaStreamCam/releases/download/v1.0.0/StreamCam.Installer-1.0.0.dmg'
+        : 'https://github.com/alresiainc/AlresiaStreamCam/releases/download/v1.0.0/StreamCam.Installer.Setup.1.0.0.exe';
       bodyHtml = `
-        <p class="confirm-message">The virtual camera needs to be compiled from source.</p>
-        <p class="settings-note">StreamCam ships its own virtual camera — no OBS needed. It compiles a small native plugin on first use.</p>
-        ${reason ? `<p class="settings-note">${escapeHtml(reason)}</p>` : ''}
-        ${downloadUrl ? `<p class="settings-note"><a href="${downloadUrl}" target="_blank" style="color: var(--accent);">${downloadUrl}</a></p>` : ''}
-        <div class="settings-group">
-          <div class="settings-group-title">Requirements</div>
-          <ol style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6;">
-            ${platform === 'macos' ? '<li>Xcode Command Line Tools (<code>xcode-select --install</code>)</li>' : '<li>Visual Studio Build Tools (or full Visual Studio)</li>'}
-            <li>The plugin compiles automatically on first use</li>
-            <li>Select "StreamCam Virtual Camera" in your video app</li>
-          </ol>
+        <p class="confirm-message">Virtual camera needs the installer.</p>
+        <p class="settings-note">Download the installer — it sets up the virtual camera automatically.</p>
+        <div style="text-align:center; margin: 16px 0;">
+          <a href="${installerUrl}" target="_blank" style="display:inline-block; padding: 10px 28px; background: var(--accent, #f5a623); color: #000; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 14px;">Download Installer</a>
         </div>
+        <p class="settings-note" style="font-size:11px; color:#555;">Or run the native-host installer from source (see setup page)</p>
       `;
     } else {
       // Unknown platform
