@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Alresia StreamCam",
+  "short_name": "StreamCam",
+  "version": "0.1.0",
+  "description": "Streaming studio & virtual camera — capture, compose, record, and stream.",
+  "author": "Alresia",
+  "action": {
+    "default_title": "Alresia StreamCam",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "desktopCapture",
+    "offscreen",
+    "storage",
+    "unlimitedStorage",
+    "nativeMessaging",
+    "downloads"
+  ],
+  "host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "minimum_chrome_version": "117"
+}

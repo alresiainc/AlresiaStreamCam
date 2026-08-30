@@ -1,0 +1,19 @@
+{
+  "name": "alresia-streamcam-host",
+  "version": "0.2.0",
+  "description": "Native messaging host for Alresia StreamCam — handles RTMP streaming via FFmpeg and cross-platform virtual camera setup",
+  "main": "host.js",
+  "bin": {
+    "streamcam-host": "./host.js"
+  },
+  "scripts": {
+    "start": "node host.js",
+    "install-host": "node install.js",
+    "setup-vcam": "node vcam-setup.js setup",
+    "check-vcam": "node vcam-setup.js check"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "license": "MIT"
+}

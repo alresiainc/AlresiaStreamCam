@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>StreamCam Installer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #111; color: #e0e0e0;
+      height: 100vh; overflow: hidden;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+
+    /* ── Title Bar ────────────────────────────────────── */
+    .titlebar {
+      height: 38px; background: #1a1a1a; border-bottom: 1px solid #222;
+      display: flex; align-items: center; padding: 0 16px;
+      font-size: 13px; color: #888;
+      -webkit-app-region: drag;
+    }
+    .titlebar-title { font-weight: 600; color: #ccc; }
+
+    /* ── Main Content ─────────────────────────────────── */
+    .content {
+      padding: 32px 40px; height: calc(100vh - 38px);
+      display: flex; flex-direction: column;
+      -webkit-app-region: no-drag;
+    }
+
+    .header { text-align: center; margin-bottom: 32px; }
+    .header h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .header p { font-size: 13px; color: #666; }
+    .header .logo { font-size: 40px; margin-bottom: 12px; display: block; }
+
+    /* ── Steps ────────────────────────────────────────── */
+    .steps { flex: 1; }
+
+    .step {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 0; border-bottom: 1px solid #1e1e1e;
+    }
+    .step:last-child { border-bottom: none; }
+
+    .step-icon {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; flex-shrink: 0;
+      background: #222; color: #555; border: 2px solid #333;
+      transition: all 0.3s;
+    }
+    .step.active .step-icon { background: #f5a623; color: #000; border-color: #f5a623; }
+    .step.done .step-icon { background: #4caf50; color: #fff; border-color: #4caf50; }
+    .step.error .step-icon { background: #f44336; color: #fff; border-color: #f44336; }
+
+    .step-info { flex: 1; }
+    .step-title { font-size: 14px; font-weight: 600; color: #ccc; }
+    .step-desc { font-size: 12px; color: #666; margin-top: 2px; }
+    .step.active .step-title { color: #f5a623; }
+    .step.done .step-title { color: #4caf50; }
+    .step.error .step-title { color: #f44336; }
+
+    .step-status {
+      font-size: 11px; color: #555; margin-top: 4px;
+      font-family: 'SF Mono', monospace;
+    }
+    .step.active .step-status { color: #f5a623; }
+
+    /* ── Progress Bar ─────────────────────────────────── */
+    .progress-bar {
+      height: 3px; background: #222; border-radius: 2px;
+      margin: 16px 0; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: #f5a623; border-radius: 2px;
+      width: 0%; transition: width 0.3s;
+    }
+
+    /* ── Extension ID Input ────────────────────────────── */
+    .ext-id-input {
+      width: 100%; padding: 10px 14px; margin-top: 12px;
+      background: #1a1a1a; border: 1px solid #333; border-radius: 6px;
+      color: #e0e0e0; font-size: 13px; font-family: monospace;
+      outline: none; transition: border-color 0.2s;
+    }
+    .ext-id-input:focus { border-color: #f5a623; }
+    .ext-id-input::placeholder { color: #444; }
+
+    /* ── Buttons ───────────────────────────────────────── */
+    .buttons { padding: 20px 0 0; }
+
+    .btn {
+      width: 100%; padding: 14px; border: none; border-radius: 8px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+    .btn-primary { background: #f5a623; color: #000; }
+    .btn-primary:hover:not(:disabled) { opacity: 0.85; }
+    .btn-success { background: #4caf50; color: #fff; }
+    .btn-success:hover:not(:disabled) { opacity: 0.85; }
+    .btn-secondary {
+      background: transparent; color: #888; border: 1px solid #333;
+      margin-top: 8px; font-size: 13px; padding: 10px;
+    }
+    .btn-secondary:hover { border-color: #555; color: #ccc; }
+
+    /* ── Done Screen ───────────────────────────────────── */
+    .done-screen {
+      display: none; text-align: center; padding-top: 40px;
+    }
+    .done-screen.visible { display: block; }
+    .done-screen .checkmark { font-size: 60px; margin-bottom: 16px; }
+    .done-screen h2 { font-size: 20px; color: #fff; margin-bottom: 8px; }
+    .done-screen p { color: #888; font-size: 14px; line-height: 1.6; }
+
+    /* ── Toast ─────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #222; border: 1px solid #444; padding: 10px 20px;
+      border-radius: 8px; font-size: 13px; color: #ccc;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    }
+    .toast.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="titlebar">
+    <span class="titlebar-title">StreamCam Installer</span>
+  </div>
+
+  <div class="content" id="mainContent">
+    <div class="header">
+      <span class="logo">🎥</span>
+      <h1>StreamCam</h1>
+      <p>Native installer for virtual camera & streaming host</p>
+    </div>
+
+    <div class="steps" id="stepsContainer">
+      <!-- Step 1: Dependencies -->
+      <div class="step" id="step1">
+        <div class="step-icon">1</div>
+        <div class="step-info">
+          <div class="step-title">Install Dependencies</div>
+          <div class="step-desc">Node.js, FFmpeg, and build tools</div>
+          <div class="step-status" id="step1Status"></div>
+        </div>
+      </div>
+
+      <!-- Step 2: Register Host -->
+      <div class="step" id="step2">
+        <div class="step-icon">2</div>
+        <div class="step-info">
+          <div class="step-title">Register Native Host</div>
+          <div class="step-desc">Connect the extension to the streaming engine</div>
+          <div class="step-status" id="step2Status"></div>
+          <input type="text" class="ext-id-input" id="extIdInput"
+                 placeholder="Extension ID (from chrome://extensions)"
+                 style="display:none" />
+        </div>
+      </div>
+
+      <!-- Step 3: Virtual Camera -->
+      <div class="step" id="step3">
+        <div class="step-icon">3</div>
+        <div class="step-info">
+          <div class="step-title">Setup Virtual Camera</div>
+          <div class="step-desc" id="step3Desc">Platform-specific virtual camera driver</div>
+          <div class="step-status" id="step3Status"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-bar" id="progressBar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="buttons">
+      <button class="btn btn-primary" id="startBtn" onclick="startInstall()">
+        Start Installation
+      </button>
+      <button class="btn btn-success" id="doneBtn" style="display:none" onclick="finishInstall()">
+        Done — Restart Chrome
+      </button>
+      <button class="btn btn-secondary" id="openExtBtn" style="display:none"
+              onclick="openExtensions()">
+        Open chrome://extensions
+      </button>
+    </div>
+  </div>
+
+  <!-- Done Screen (shown after completion) -->
+  <div class="done-screen" id="doneScreen">
+    <div class="checkmark">✅</div>
+    <h2>Installation Complete!</h2>
+    <p>Restart Chrome, then click the StreamCam icon<br>and try the Virtual Camera.</p>
+    <br>
+    <button class="btn btn-primary" onclick="window.close()" style="max-width:200px; margin:0 auto;">
+      Close Installer
+    </button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

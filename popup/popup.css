@@ -1,0 +1,154 @@
+/* Alresia StreamCam — Popup, matches the studio's control-room identity */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-0: #0a0c0f;
+  --bg-1: #12151a;
+  --bg-2: #1a1e24;
+  --bg-3: #21262d;
+  --line: #262b32;
+  --line-soft: #1c2027;
+  --text-hi: #eef1f4;
+  --text-mid: #9aa3ad;
+  --text-low: #626b76;
+  --signal: #ff4d2e;
+  --signal-soft: #3a1f17;
+  --live: #22d3aa;
+  --live-soft: #10322b;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+}
+
+body {
+  width: 300px;
+  font-family: var(--font-ui);
+  background: var(--bg-0);
+  color: var(--text-hi);
+  font-size: 13px;
+}
+
+button { font-family: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid #4da3ff; outline-offset: 1px; }
+.hidden { display: none !important; }
+
+.popup { display: flex; flex-direction: column; }
+
+/* ─── Header ─────────────────────────────────────────────────────── */
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 12px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--line);
+}
+
+.logo { width: 30px; height: 30px; flex-shrink: 0; }
+
+.popup-title { display: flex; flex-direction: column; line-height: 1.15; }
+.popup-title h1 { font-size: 14.5px; font-weight: 700; }
+.popup-version {
+  font-size: 9px; font-weight: 600; letter-spacing: 0.1em;
+  color: var(--text-low);
+}
+
+/* ─── Body ───────────────────────────────────────────────────────── */
+
+.popup-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.popup-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--text-hi);
+}
+.popup-btn svg { width: 16px; height: 16px; }
+.popup-btn:hover { background: var(--bg-3); }
+
+.popup-btn.primary {
+  background: var(--live);
+  border-color: var(--live);
+  color: #06231c;
+}
+.popup-btn.primary:hover { background: #1cbd97; }
+
+.source-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+}
+.source-pick-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 9px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-hi);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+.source-pick-item svg { width: 15px; height: 15px; color: var(--text-mid); flex-shrink: 0; }
+.source-pick-item:hover { background: var(--bg-3); }
+.source-pick-item:hover svg { color: var(--live); }
+
+.popup-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.popup-btn.secondary { font-size: 11.5px; padding: 9px 8px; }
+.popup-btn.secondary:hover { border-color: var(--signal); color: var(--signal); }
+.popup-quick-actions .popup-btn:last-child:hover { border-color: var(--live); color: var(--live); }
+
+.popup-status {
+  padding: 9px 11px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+}
+.status-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-mid); }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.status-dot.idle { background: var(--text-low); }
+.status-dot.active { background: var(--live); box-shadow: 0 0 6px rgba(34,211,170,0.7); }
+.status-dot.error { background: var(--signal); }
+
+/* ─── Footer ─────────────────────────────────────────────────────── */
+
+.popup-footer {
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--line-soft);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+.footer-dot { color: var(--text-low); font-size: 11px; }
+.link-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-low);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.link-btn:hover { color: var(--text-mid); }

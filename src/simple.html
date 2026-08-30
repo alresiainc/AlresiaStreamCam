@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alresia StreamCam — Simple Mode</title>
+  <link rel="stylesheet" href="simple/simple.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="tallyRail" data-state="idle" aria-hidden="true"></div>
+
+    <header id="topbar">
+      <div class="tb-brand">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="1" y="1" width="30" height="30" rx="8" fill="#171b20" stroke="#2b3138" stroke-width="1"/>
+          <circle cx="16" cy="16" r="7.5" fill="none" stroke="#ff4d2e" stroke-width="2"/>
+          <circle cx="16" cy="16" r="3" fill="#ff4d2e"/>
+        </svg>
+        <div class="tb-brandtext">
+          <span class="tb-name">StreamCam</span>
+          <span class="tb-sub">SIMPLE MODE</span>
+        </div>
+      </div>
+      <div class="tb-badges">
+        <span class="tb-badge rec" id="tbRecBadge"><span class="dot"></span>REC</span>
+        <span class="tb-badge live" id="tbLiveBadge"><span class="dot"></span>LIVE</span>
+      </div>
+      <a class="tb-advanced-link" id="advancedLink" href="#">Advanced Mode →</a>
+    </header>
+
+    <main id="main">
+
+      <!-- ═══ Screen 1: pick a single source ═══ -->
+      <section id="pickerScreen">
+        <h1>What do you want to share?</h1>
+        <p class="picker-hint">Pick one — you can switch it any time.</p>
+        <div class="picker-grid">
+          <button class="picker-card" id="pickCamera">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+            <span>Camera</span>
+          </button>
+          <button class="picker-card" id="pickScreen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <span>Screen</span>
+          </button>
+          <button class="picker-card" id="pickWindow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M2 8h20"/><path d="M8 21h8M12 17v4"/></svg>
+            <span>Window</span>
+          </button>
+          <button class="picker-card" id="pickTab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M13 2v7h7"/></svg>
+            <span>Browser Tab</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══ Screen 2: live source + actions ═══ -->
+      <section id="liveScreen" class="hidden">
+        <div id="previewWrap">
+          <div id="monitorFrame">
+            <video id="simpleVideo" autoplay muted playsinline></video>
+            <div class="monitor-corner tl"></div>
+            <div class="monitor-corner tr"></div>
+            <div class="monitor-corner bl"></div>
+            <div class="monitor-corner br"></div>
+            <div class="source-badge" id="sourceBadge">Camera</div>
+          </div>
+        </div>
+
+        <button class="change-source-btn" id="changeSourceBtn">Change source</button>
+
+        <div class="actions-row">
+          <button class="action-btn record-btn" id="recordBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+            <span>Record</span>
+          </button>
+          <button class="action-btn vcam-btn" id="vcamBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+            <span>Virtual Cam</span>
+          </button>
+          <button class="action-btn stream-btn" id="streamToggleBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Stream</span>
+          </button>
+        </div>
+
+        <div class="record-timer hidden" id="recordTimer">
+          <span class="rec-dot"></span>
+          <span id="recordTime" class="mono">00:00:00</span>
+        </div>
+
+        <!-- Streaming configuration — appears when "Stream" is tapped -->
+        <div class="stream-panel hidden" id="streamPanel">
+          <div class="stream-panel-header">
+            <h3>Stream configuration</h3>
+            <button class="modal-close" id="streamPanelClose">&times;</button>
+          </div>
+          <div class="field">
+            <label>Provider</label>
+            <select id="streamProvider"></select>
+          </div>
+          <div class="field">
+            <label>Server URL</label>
+            <input type="text" id="streamUrl" class="mono" placeholder="rtmp://" spellcheck="false" />
+          </div>
+          <div class="field">
+            <label>Stream key</label>
+            <input type="password" id="streamKey" class="mono" placeholder="xxxx-xxxx-xxxx-xxxx" spellcheck="false" autocomplete="off" />
+          </div>
+          <button class="go-live-btn" id="goLiveBtn">
+            <span>Go Live</span>
+          </button>
+          <p class="stream-status-text" id="streamStatusText"></p>
+          <p class="stream-note">Streams relay at 480p for reliability. Need more than one destination or full-res streaming? Switch to Advanced Mode.</p>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" role="status"></div>
+  </div>
+
+  <script src="types/constants.js"></script>
+  <script src="utils/logger.js"></script>
+  <script src="utils/event-bus.js"></script>
+  <script src="utils/platform.js"></script>
+  <script src="storage/recordings-db.js"></script>
+  <script src="capture/source-manager.js"></script>
+  <script src="media/recorder.js"></script>
+  <script src="streaming/stream-manager.js"></script>
+  <script src="streaming/vcam-manager.js"></script>
+  <script src="simple/simple.js"></script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alresia StreamCam — Studio</title>
+  <link rel="stylesheet" href="studio/studio.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- Tally rail — the single status signal for the whole board -->
+    <div id="tallyRail" data-state="idle" aria-hidden="true"></div>
+
+    <!-- ═══════════════════ Top Bar ═══════════════════════════════ -->
+    <header id="topbar">
+      <div class="tb-brand">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="1" y="1" width="30" height="30" rx="8" fill="#171b20" stroke="#2b3138" stroke-width="1"/>
+          <circle cx="16" cy="16" r="7.5" fill="none" stroke="#ff4d2e" stroke-width="2"/>
+          <circle cx="16" cy="16" r="3" fill="#ff4d2e"/>
+        </svg>
+        <div class="tb-brandtext">
+          <span class="tb-name">StreamCam</span>
+          <span class="tb-sub">ALRESIA STUDIO</span>
+        </div>
+      </div>
+
+      <div class="tb-center">
+        <div class="tb-readout">
+          <label for="resolutionSelect">OUT</label>
+          <select id="resolutionSelect">
+            <option value="1920x1080">1920×1080</option>
+            <option value="1280x720">1280×720</option>
+            <option value="2560x1440">2560×1440</option>
+            <option value="3840x2160">3840×2160</option>
+          </select>
+        </div>
+        <div class="tb-readout mono" id="fpsDisplay">0 FPS</div>
+      </div>
+
+      <div class="tb-right">
+        <div class="tb-badges">
+          <span class="tb-badge rec" id="tbRecBadge">
+            <span class="dot"></span>REC
+          </span>
+          <span class="tb-badge live" id="tbLiveBadge">
+            <span class="dot"></span>LIVE
+          </span>
+        </div>
+        <a class="tb-simple-link" id="simpleLink" href="#" title="Switch to Simple Mode">Simple Mode</a>
+        <button class="tb-btn" id="settingsBtn" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══════════════════ Main Layout ═══════════════════════════ -->
+    <div id="main">
+
+      <!-- ─── Left Panel: Sources ─────────────────────────────── -->
+      <aside id="sourcePanel">
+        <div class="panel-header">
+          <h2><span class="ph-eyebrow">01</span>Sources</h2>
+        </div>
+
+        <div class="source-list" id="sourceList">
+          <div class="source-empty" id="sourceEmpty">
+            <p>Board is empty</p>
+            <p class="source-hint">Patch in a source below to begin</p>
+          </div>
+        </div>
+
+        <div class="source-actions">
+          <button class="source-add-btn" id="addCameraBtn" title="Add Camera">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+            <span>Camera</span>
+          </button>
+          <button class="source-add-btn" id="addTabBtn" title="Capture a browser tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M13 2v7h7"/></svg>
+            <span>Tab</span>
+          </button>
+          <button class="source-add-btn" id="addScreenBtn" title="Add Screen or Window">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <span>Screen</span>
+          </button>
+          <button class="source-add-btn" id="addWindowBtn" title="Add Application Window">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M2 8h20"/><path d="M8 21h8M12 17v4"/></svg>
+            <span>Window</span>
+          </button>
+          <button class="source-add-btn" id="addMicrophoneBtn" title="Add Microphone">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3"/></svg>
+            <span>Mic</span>
+          </button>
+          <button class="source-add-btn danger" id="removeAllBtn" title="Remove all sources">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>Clear</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- ─── Center: Preview + Cue Bus ───────────────────────── -->
+      <section id="previewArea">
+        <div id="previewWrap">
+          <div id="monitorFrame">
+            <canvas id="previewCanvas"></canvas>
+            <div id="previewOverlay">
+              <div class="preview-empty" id="previewEmpty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                <p>Nothing on air yet</p>
+                <p class="preview-empty-hint">Add a source from the left rail to see it here</p>
+              </div>
+            </div>
+            <div class="monitor-corner tl"></div>
+            <div class="monitor-corner tr"></div>
+            <div class="monitor-corner bl"></div>
+            <div class="monitor-corner br"></div>
+          </div>
+        </div>
+
+        <!-- Cue bus — scene switcher, styled like a vision-mixer bank -->
+        <div id="cueBus">
+          <div class="cue-bus-label">Scenes</div>
+          <div class="scene-list" id="sceneList"></div>
+          <button class="scene-add-btn" id="addSceneBtn" title="New scene">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- ─── Right Panel: Outputs ────────────────────────────── -->
+      <aside id="outputPanel">
+        <div class="panel-header">
+          <h2><span class="ph-eyebrow">02</span>Outputs</h2>
+        </div>
+
+        <div class="output-scroll">
+          <div class="output-section">
+            <h3>Record</h3>
+            <div class="output-row">
+              <button class="output-btn record-btn" id="recordBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+                <span>Record</span>
+              </button>
+              <div class="record-status" id="recordStatus"></div>
+            </div>
+            <div class="record-timer hidden" id="recordTimer">
+              <span class="rec-dot"></span>
+              <span id="recordTime" class="mono">00:00:00</span>
+            </div>
+            <div class="recordings-list" id="recordingsList"></div>
+          </div>
+
+          <div class="output-section">
+            <h3>Stream Destinations</h3>
+            <div class="destinations-list" id="destinationsList"></div>
+            <button class="add-destination-btn" id="addDestinationBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              Add destination
+            </button>
+            <p class="destinations-note">Streams relay at 480p for reliability across machines. Full-resolution hardware encoding is on the roadmap.</p>
+          </div>
+
+          <div class="output-section">
+            <h3>Virtual Camera</h3>
+            <div class="output-row">
+              <button class="output-btn vcam-btn" id="vcamBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                <span>Virtual Cam</span>
+              </button>
+            </div>
+            <div class="vcam-note" id="vcamNote">Click to check availability — Linux (auto-setup), macOS/Windows (compiles from source)</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ═══════════════════ Settings Modal ══════════════════════ -->
+    <div class="modal-overlay hidden" id="settingsOverlay">
+      <div class="modal settings-modal">
+        <div class="modal-header">
+          <h3>Settings</h3>
+          <button class="modal-close" id="settingsClose">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="settings-group">
+            <div class="settings-group-title">Recording</div>
+            <div class="field">
+              <label for="setRecordBitrate">Video bitrate</label>
+              <select id="setRecordBitrate">
+                <option value="2500000">2.5 Mbps — smaller files</option>
+                <option value="5000000" selected>5 Mbps — balanced</option>
+                <option value="8000000">8 Mbps — high quality</option>
+                <option value="12000000">12 Mbps — max quality</option>
+              </select>
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-title">Streaming</div>
+            <div class="field">
+              <label for="setStreamCodec">Codec</label>
+              <select id="setStreamCodec">
+                <option value="vp8">VP8 — widest compatibility</option>
+                <option value="vp9">VP9 — better quality per bit</option>
+                <option value="h264">H.264 — best platform support</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="setStreamBitrate">Video bitrate</label>
+              <select id="setStreamBitrate">
+                <option value="2500000">2.5 Mbps — 720p</option>
+                <option value="4500000" selected>4.5 Mbps — 1080p</option>
+                <option value="6000000">6 Mbps — 1080p60</option>
+              </select>
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-title">About</div>
+            <p class="settings-note">Alresia StreamCam runs entirely on this device. Nothing is uploaded anywhere except the RTMP server you configure yourself. Stream keys stay in local browser storage and are never logged.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="settingsCancel">Cancel</button>
+          <button class="btn-primary" id="settingsSave">Save changes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ Toast ═════════════════════════════════ -->
+    <div id="toast" role="status"></div>
+
+  </div>
+
+  <!-- ═══════════════════ Scripts ═════════════════════════════════ -->
+  <script src="types/constants.js"></script>
+  <script src="utils/logger.js"></script>
+  <script src="utils/event-bus.js"></script>
+  <script src="utils/platform.js"></script>
+  <script src="storage/settings.js"></script>
+  <script src="storage/recordings-db.js"></script>
+  <script src="capture/source-manager.js"></script>
+  <script src="media/compositor.js"></script>
+  <script src="media/audio-mixer.js"></script>
+  <script src="media/recorder.js"></script>
+  <script src="studio/scene-manager.js"></script>
+  <script src="streaming/stream-manager.js"></script>
+  <script src="streaming/vcam-manager.js"></script>
+  <script src="studio/studio.js"></script>
+</body>
+</html>

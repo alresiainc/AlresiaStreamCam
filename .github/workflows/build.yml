@@ -1,0 +1,110 @@
+name: Build Installers
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: native-host/installer
+        run: npm install
+
+      - name: Build DMG
+        working-directory: native-host/installer
+        run: npm run build:mac
+
+      - name: Upload DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-macos
+          path: native-host/installer/dist/*.dmg
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: native-host/installer
+        run: npm install
+
+      - name: Build EXE
+        working-directory: native-host/installer
+        run: npm run build:win
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-windows
+          path: native-host/installer/dist/*.exe
+          if-no-files-found: error
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: native-host/installer
+        run: npm install
+
+      - name: Build DEB + AppImage
+        working-directory: native-host/installer
+        run: npm run build:linux
+
+      - name: Upload Linux builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-linux
+          path: |
+            native-host/installer/dist/*.deb
+            native-host/installer/dist/*.AppImage
+          if-no-files-found: error
+
+  release:
+    needs: [build-macos, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            installer-macos/*.dmg
+            installer-windows/*.exe
+            installer-linux/*.deb
+            installer-linux/*.AppImage
+          generate_release_notes: true
+          draft: false
+          prerelease: false

@@ -1,0 +1,23 @@
+node_modules/
+.DS_Store
+*.log
+
+# Native host
+default.mat
+*.mat
+
+# Native host dependencies
+native-host/node_modules/
+native-host/.extension-id
+
+# Installer build artifacts
+native-host/installer/node_modules/
+native-host/installer/dist/
+
+# Compiled virtual camera binaries
+native-host/platform/macos/build/
+native-host/platform/windows/build/
+
+# OS files
+Thumbs.db
+desktop.ini
