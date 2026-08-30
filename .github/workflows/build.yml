@@ -29,29 +29,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build EXE installer
-        shell: pwsh
+      - name: Build Windows installer
+        shell: bash
         run: |
-          $ErrorActionPreference = "Stop"
-          $ProjectRoot = "native-host"
-          $InstallerDir = "$ProjectRoot/installer"
-          $DistDir = "$InstallerDir/dist"
-          $Staging = "$DistDir/staging"
+          mkdir -p native-host/installer/dist
 
-          if (Test-Path $DistDir) { Remove-Item -Recurse -Force $DistDir }
-          New-Item -ItemType Directory -Force -Path $Staging | Out-Null
+          # Create staging directory
+          STAGING="native-host/installer/dist/StreamCam-Windows"
+          mkdir -p "$STAGING"
 
           # Copy host files
-          Copy-Item "$ProjectRoot/host.js" "$Staging/"
-          Copy-Item "$ProjectRoot/install.js" "$Staging/"
-          Copy-Item "$ProjectRoot/vcam-setup.js" "$Staging/"
-          Copy-Item "$ProjectRoot/package.json" "$Staging/"
-          Copy-Item -Recurse "$ProjectRoot/platform" "$Staging/"
+          cp native-host/host.js "$STAGING/"
+          cp native-host/install.js "$STAGING/"
+          cp native-host/vcam-setup.js "$STAGING/"
+          cp native-host/package.json "$STAGING/"
+          cp -r native-host/platform "$STAGING/"
 
           # Create install.bat
-          $Bat = @'
+          cat > "$STAGING/install.bat" << 'BATEOF'
           @echo off
           title StreamCam Installer
+          color 0F
           echo.
           echo  StreamCam Installer
           echo  ===================
@@ -61,7 +59,7 @@ jobs:
           if %ERRORLEVEL% neq 0 (
               echo  Node.js not found. Opening download page...
               start https://nodejs.org
-              echo  Please install Node.js, then run this again.
+              echo  Please install Node.js, then run install.bat again.
               pause
               exit /b 1
           )
@@ -80,49 +78,31 @@ jobs:
           echo.
           echo  Done! Restart Chrome to use StreamCam.
           pause
-          '@
-          Set-Content -Path "$Staging/install.bat" -Value $Bat -Encoding ASCII
+          BATEOF
 
-          # Create SED for iexpress
-          $Sed = @"
-          [Version]
-          Class=IEXPRESS
-          TEDVer=2000
-          [Options]
-          PackagePurpose=Install
-          ShowInstallProgram=1
-          SelfExtract=1
-          AppName=StreamCam Installer
-          AppVersion=1.0.0
-          AppPublisher=Alresia
-          TargetName=StreamCam-Installer-Setup.exe
-          StagingDir=$Staging
-          CompressionType=MSZIP
-          SourceDir=$Staging
-          [ExtractionOptions]
-          ShowProgress=1
-          RunProgram=install.bat
-          "@
-          Set-Content -Path "$DistDir/installer.sed" -Value $Sed -Encoding ASCII
+          # Create README
+          cat > "$STAGING/README.txt" << 'READMEEOF'
+          StreamCam — Windows Installer
+          ==============================
+          
+          1. Make sure Node.js is installed (https://nodejs.org)
+          2. Double-click install.bat
+          3. Follow the prompts
+          4. Restart Chrome
+          5. Click the StreamCam icon and try "Virtual Cam"
+          READMEEOF
 
-          # Build with iexpress
-          Push-Location $DistDir
-          & iexpress /N installer.sed
-          Pop-Location
+          # Create ZIP
+          cd native-host/installer/dist
+          powershell -Command "Compress-Archive -Path 'StreamCam-Windows' -DestinationPath 'StreamCam-Installer-Windows.zip' -Force"
 
-          if (Test-Path "$DistDir/StreamCam-Installer.exe") {
-              Move-Item "$DistDir/StreamCam-Installer.exe" "$DistDir/StreamCam-Installer-Setup.exe" -Force
-              $Size = [math]::Round((Get-Item "$DistDir/StreamCam-Installer-Setup.exe").Length / 1KB)
-              Write-Host "Built: StreamCam-Installer-Setup.exe ($Size KB)"
-          } else {
-              Write-Host "Build may have failed"
-          }
+          echo "Built: StreamCam-Installer-Windows.zip"
 
-      - name: Upload EXE
+      - name: Upload ZIP
         uses: actions/upload-artifact@v4
         with:
           name: installer-windows
-          path: native-host/installer/dist/*.exe
+          path: native-host/installer/dist/*.zip
           if-no-files-found: error
 
   build-linux:
