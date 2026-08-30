@@ -2,11 +2,10 @@
 # ═══════════════════════════════════════════════════════════════
 # StreamCam — Native Installer Builder
 #
-# macOS:  .pkg (~5KB scripts only, user runs post-install)
-# Linux:  .deb (~20KB scripts only)
+# macOS:  .dmg containing .pkg + helper script (bypasses Gatekeeper)
+# Linux:  .deb package
 #
-# The installers are tiny because they just contain the host scripts.
-# The post-install step downloads deps and sets up the virtual camera.
+# No Electron. No bloat. Just scripts.
 # ═══════════════════════════════════════════════════════════════
 
 set -e
@@ -23,13 +22,15 @@ echo
 rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
-# ── macOS: .pkg ───────────────────────────────────────────────
+# ── macOS: .pkg → .dmg ───────────────────────────────────────
 
 build_macos() {
-    echo "Building macOS .pkg..."
+    echo "Building macOS installer..."
 
     WORK="$DIST_DIR/_mac_work"
     mkdir -p "$WORK/root/Applications/StreamCam"
+    mkdir -p "$WORK/scripts"
+    mkdir -p "$WORK/dmg_contents"
 
     # Copy host files into the package root
     cp "$PROJECT_ROOT/host.js" "$WORK/root/Applications/StreamCam/"
@@ -41,7 +42,6 @@ build_macos() {
     cp "$PROJECT_ROOT"/installers/* "$WORK/root/Applications/StreamCam/installers/" 2>/dev/null || true
 
     # Post-install script
-    mkdir -p "$WORK/scripts"
     cat > "$WORK/scripts/postinstall" << 'POSTEOF'
 #!/bin/bash
 set -e
@@ -49,7 +49,6 @@ set -e
 SRC="/Applications/StreamCam"
 DEST="/Applications/StreamCam.app/Contents/MacOS"
 
-# Move files into a proper .app bundle structure
 mkdir -p "$DEST"
 mv "$SRC/host.js" "$DEST/" 2>/dev/null || true
 mv "$SRC/install.js" "$DEST/" 2>/dev/null || true
@@ -64,7 +63,6 @@ INSTALL_DIR="$DEST"
 echo ""
 echo "StreamCam — Setting up..."
 
-# Check Node.js
 if ! command -v node &>/dev/null; then
     echo "Node.js not found."
     if command -v brew &>/dev/null; then
@@ -77,7 +75,6 @@ if ! command -v node &>/dev/null; then
     fi
 fi
 
-# Check Xcode CLT
 if ! xcode-select -p &>/dev/null 2>&1; then
     echo "Installing Xcode Command Line Tools..."
     xcode-select --install 2>/dev/null
@@ -85,12 +82,10 @@ if ! xcode-select -p &>/dev/null 2>&1; then
     exit 0
 fi
 
-# Install deps
 cd "$INSTALL_DIR"
 echo "Installing npm dependencies..."
 npm install --production 2>&1 | tail -1
 
-# Detect extension ID
 EXT_ID=""
 CHROME_DIR="$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts"
 if [ -d "$CHROME_DIR" ]; then
@@ -108,7 +103,6 @@ else
     echo "Run: node install.js --id=YOUR_EXTENSION_ID"
 fi
 
-# Virtual camera
 echo "Setting up virtual camera..."
 node vcam-setup.js setup 2>&1 | tail -2 || true
 
@@ -130,12 +124,24 @@ POSTEOF
     # Build product archive
     productbuild \
         --package "$WORK/component.pkg" \
-        "$DIST_DIR/StreamCam-Installer.pkg"
+        "$WORK/StreamCam-Installer.pkg"
+
+    # Create DMG contents
+    cp "$WORK/StreamCam-Installer.pkg" "$WORK/dmg_contents/"
+    cp "$PROJECT_ROOT/installers/open-mac.command" "$WORK/dmg_contents/"
+
+    # Build the DMG
+    hdiutil create \
+        -volname "StreamCam Installer" \
+        -srcfolder "$WORK/dmg_contents" \
+        -ov -format UDZO \
+        "$DIST_DIR/StreamCam-Installer.dmg"
 
     rm -rf "$WORK"
 
-    SIZE=$(du -h "$DIST_DIR/StreamCam-Installer.pkg" | cut -f1)
-    echo "  Built: dist/StreamCam-Installer.pkg ($SIZE)"
+    SIZE=$(du -h "$DIST_DIR/StreamCam-Installer.dmg" | cut -f1)
+    echo "  Built: dist/StreamCam-Installer.dmg ($SIZE)"
+    echo "  Contains: StreamCam-Installer.pkg + Open Installer.command"
 }
 
 # ── Linux: .deb ───────────────────────────────────────────────
