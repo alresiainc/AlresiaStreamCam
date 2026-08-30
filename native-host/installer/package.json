@@ -2,7 +2,11 @@
   "name": "streamcam-installer",
   "version": "1.0.0",
   "description": "StreamCam Native Installer — sets up the virtual camera and streaming host",
-  "author": "Alresia",
+  "author": {
+    "name": "Alresia",
+    "email": "hello@alresia.com"
+  },
+  "homepage": "https://github.com/alresiainc/AlresiaStreamCam",
   "license": "MIT",
   "main": "main.js",
   "scripts": {
