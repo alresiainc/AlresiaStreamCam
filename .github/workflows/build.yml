@@ -13,14 +13,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build DMG installer
-        run: bash native-host/installer/build.sh
+      - name: Build macOS installer
+        run: |
+          mkdir -p native-host/installer/dist
 
-      - name: Upload DMG
+          # The .command file IS the installer — no DMG, no .pkg
+          # Users download it, right-click → Open, and it handles everything
+          cp native-host/installers/install-mac.command native-host/installer/dist/StreamCam-Installer.command
+          chmod +x native-host/installer/dist/StreamCam-Installer.command
+
+          echo "Built: StreamCam-Installer.command"
+
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: installer-macos
-          path: native-host/installer/dist/*.dmg
+          path: native-host/installer/dist/*.command
           if-no-files-found: error
 
   build-windows:

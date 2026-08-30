@@ -48,19 +48,29 @@
     .download-btn:disabled { opacity: 0.4; cursor: default; }
     .download-btn svg { width: 18px; height: 18px; }
 
-    .divider {
-      display: flex; align-items: center; gap: 12px;
-      margin: 24px 0 20px; color: #3f3f46; font-size: 11px; font-weight: 500;
-      text-transform: uppercase; letter-spacing: 0.05em;
+    .steps {
+      margin: 24px 0 20px;
+      text-align: left;
+      list-style: none;
+      counter-reset: step;
     }
-    .divider::before, .divider::after {
-      content: ''; flex: 1; height: 1px; background: #222225;
+    .steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 10px 12px 10px 44px;
+      font-size: 13px; color: #a1a1aa; line-height: 1.5;
+      border-left: 1px solid #27272a;
+      margin-left: 12px;
     }
-
-    .alt-note {
-      font-size: 12px; color: #52525b; line-height: 1.6;
-      margin-bottom: 20px;
+    .steps li::before {
+      content: counter(step);
+      position: absolute; left: -12px; top: 8px;
+      width: 24px; height: 24px;
+      background: #18181b; border: 1px solid #27272a; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #71717a;
     }
+    .steps li:last-child { border-left-color: transparent; }
 
     .check-btn {
       width: 100%; padding: 12px;
@@ -106,12 +116,7 @@
       <span id="downloadLabel">Download Installer</span>
     </button>
 
-    <div class="divider">then</div>
-
-    <p class="alt-note">
-      Run the downloaded file and follow the prompts.<br>
-      It installs everything automatically.
-    </p>
+    <ul class="steps" id="stepsList"></ul>
 
     <button class="check-btn" id="checkBtn" style="display:none">
       I installed it — check connection

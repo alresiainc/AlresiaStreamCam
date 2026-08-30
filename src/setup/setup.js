@@ -20,11 +20,42 @@ function getInstaller(platform) {
   const base = `https://github.com/${REPO}/releases/download/${RELEASE_TAG}`;
   switch (platform) {
     case 'macos':
-      return { file: 'StreamCam-Installer-1.0.0.dmg', url: `${base}/StreamCam-Installer-1.0.0.dmg`, icon: '🍎 macOS' };
+      return {
+        file: 'StreamCam-Installer.command',
+        url: `${base}/StreamCam-Installer.command`,
+        icon: '🍎',
+        name: 'macOS',
+        instructions: [
+          'After downloading, go to your Downloads folder',
+          'Right-click the file → select "Open"',
+          'Click "Open" in the security prompt',
+          'Follow the terminal instructions',
+        ],
+      };
     case 'windows':
-      return { file: 'StreamCam-Installer-Setup-1.0.0.exe', url: `${base}/StreamCam-Installer-Setup-1.0.0.exe`, icon: '🪟 Windows' };
+      return {
+        file: 'StreamCam-Installer-Windows.zip',
+        url: `${base}/StreamCam-Installer-Windows.zip`,
+        icon: '🪟',
+        name: 'Windows',
+        instructions: [
+          'Extract the ZIP file',
+          'Double-click install.bat',
+          'Follow the prompts',
+        ],
+      };
     case 'linux':
-      return { file: 'StreamCam-Installer-1.0.0.AppImage', url: `${base}/StreamCam-Installer-1.0.0.AppImage`, icon: '🐧 Linux' };
+      return {
+        file: 'streamcam_1.0.0_amd64.deb',
+        url: `${base}/streamcam_1.0.0_amd64.deb`,
+        icon: '🐧',
+        name: 'Linux',
+        instructions: [
+          'Open a terminal',
+          'Run: sudo dpkg -i streamcam_1.0.0_amd64.deb',
+          'Or open the .deb file with Software Center',
+        ],
+      };
     default:
       return null;
   }
@@ -38,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const downloadLabel = document.getElementById('downloadLabel');
   const checkBtn = document.getElementById('checkBtn');
   const statusMsg = document.getElementById('statusMsg');
+  const stepsList = document.getElementById('stepsList');
 
   if (!installer) {
     badge.textContent = 'Unknown platform';
@@ -45,8 +77,15 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  badge.textContent = installer.icon;
-  downloadLabel.textContent = `Download for ${installer.icon.split(' ')[1]}`;
+  badge.textContent = `${installer.icon} ${installer.name}`;
+  downloadLabel.textContent = `Download for ${installer.name}`;
+
+  // Show steps
+  installer.instructions.forEach((step, i) => {
+    const li = document.createElement('li');
+    li.textContent = step;
+    stepsList.appendChild(li);
+  });
 
   // Download handler
   downloadBtn.addEventListener('click', () => {
@@ -58,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
       filename: installer.file,
       saveAs: false,
     }).then(() => {
-      statusMsg.textContent = '✓ Downloaded. Run the file from your Downloads folder.';
+      statusMsg.textContent = '✓ Downloaded! Follow the steps below.';
       statusMsg.className = 'status ok';
       checkBtn.style.display = 'block';
       downloadLabel.textContent = 'Downloaded ✓';
