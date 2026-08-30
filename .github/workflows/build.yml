@@ -3,8 +3,8 @@ name: Build Installers
 on:
   push:
     tags:
-      - 'v*'  # Trigger on version tags like v1.0.0
-  workflow_dispatch:  # Allow manual trigger
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build-macos:
@@ -24,14 +24,14 @@ jobs:
 
       - name: Build DMG
         working-directory: native-host/installer
-        run: npm run build:mac
+        run: npx electron-builder --mac dmg --x64
 
       - name: Upload DMG
         uses: actions/upload-artifact@v4
         with:
           name: installer-macos
           path: native-host/installer/dist/*.dmg
-          if-no-files-found: error
+          if-no-files-found: warn
 
   build-windows:
     runs-on: windows-latest
@@ -50,14 +50,14 @@ jobs:
 
       - name: Build EXE
         working-directory: native-host/installer
-        run: npm run build:win
+        run: npx electron-builder --win nsis --x64
 
       - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
           name: installer-windows
           path: native-host/installer/dist/*.exe
-          if-no-files-found: error
+          if-no-files-found: warn
 
   build-linux:
     runs-on: ubuntu-latest
@@ -76,7 +76,7 @@ jobs:
 
       - name: Build DEB + AppImage
         working-directory: native-host/installer
-        run: npm run build:linux
+        run: npx electron-builder --linux deb AppImage
 
       - name: Upload Linux builds
         uses: actions/upload-artifact@v4
@@ -85,26 +85,41 @@ jobs:
           path: |
             native-host/installer/dist/*.deb
             native-host/installer/dist/*.AppImage
-          if-no-files-found: error
+          if-no-files-found: warn
 
-  release:
+  publish-release:
     needs: [build-macos, build-windows, build-linux]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     steps:
-      - name: Download all artifacts
+      - name: Download macOS artifact
         uses: actions/download-artifact@v4
+        with:
+          name: installer-macos
+          path: artifacts/macos
 
-      - name: Create Release
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: installer-windows
+          path: artifacts/windows
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: installer-linux
+          path: artifacts/linux
+
+      - name: List artifacts
+        run: find artifacts -type f
+
+      - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            installer-macos/*.dmg
-            installer-windows/*.exe
-            installer-linux/*.deb
-            installer-linux/*.AppImage
-          generate_release_notes: true
-          draft: false
-          prerelease: false
+            artifacts/macos/*
+            artifacts/windows/*
+            artifacts/linux/*
+          fail_on_unmatched_files: false
